@@ -20,7 +20,7 @@ import "github.com/xxjwxc/gomp3"
 ## Examples are here
 
 <details>
-  <summary>Example1: Decode the whole mp3 and play.</summary>
+  <summary>Decode the whole mp3 and play.</summary>
 
 ``` golang
 package main
@@ -28,26 +28,26 @@ package main
 import (
 	"io/ioutil"
 	"log"
-	"time"
 
 	"github.com/hajimehoshi/oto"
 	"github.com/xxjwxc/gomp3"
+	"github.com/xxjwxc/public/mylog"
 )
 
 func main() {
 	var err error
 	var file []byte
 	if file, err = ioutil.ReadFile("./song.mp3"); err != nil {
-		t.Error(err)
+		mylog.Error(err)
 	}
 	dec, err := gomp3.NewMp3(file)
 	if err != nil {
-		t.Error(err)
+		mylog.Error(err)
 	}
-	ioutil.WriteFile("song.pcm", dec.PcmData, 0644)// topcm
+	ioutil.WriteFile("song.pcm", dec.PcmData, 0644) // topcm
 
 	data, _ := dec.ToWav(1)
-	ioutil.WriteFile("song.wav", data, 0644)// towav
+	ioutil.WriteFile("song.wav", data, 0644) // towav
 
 	// play
 	var context *oto.Context
