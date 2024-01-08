@@ -21,8 +21,11 @@ int decode(mp3dec_t *dec, mp3dec_frame_info_t *info, unsigned char *data, int *l
 */
 import "C"
 import (
+	"bytes"
+	"io"
 	"unsafe"
 
+	"github.com/xxjwxc/gomp3/lame"
 	"github.com/xxjwxc/public/message"
 )
 
@@ -207,4 +210,32 @@ func PcmToWav(byteDst []byte, numchannel int, saplerate int) (resDst string) {
 	headerDst := string(header)
 	resDst = headerDst + string(byteDst)
 	return
+}
+
+/*
+*
+dst:二进制字符串
+numchannel:1=单声道，2=多声道
+saplerate：采样率 8000/16000
+outQuality: 压缩质量：0: highest; 9: lowest
+*/
+func PcmToMp3(bytePcm []byte, numchannel int, saplerate, outQuality int) ([]byte, error) {
+	// var data []byte
+	// // 创建一个新的buffer并写入字节切片
+	var buf bytes.Buffer
+
+	wr, err := lame.NewWriter(&buf)
+	if err != nil {
+		return nil, err
+	}
+	wr.InSampleRate = saplerate   // input sample rate
+	wr.InNumChannels = numchannel // number of channels: 1
+	wr.OutMode = lame.MODE_STEREO // common, 2 channels
+	wr.OutQuality = outQuality    // 0: highest; 9: lowest
+	wr.OutSampleRate = saplerate  // output sample rate
+
+	io.Copy(wr, bytes.NewReader(bytePcm))
+	wr.Close()
+
+	return buf.Bytes(), nil
 }

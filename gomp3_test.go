@@ -36,3 +36,15 @@ func TestDecodeMp3(t *testing.T) {
 		log.Fatal(err)
 	}
 }
+
+func TestDecodePcm(t *testing.T) {
+	var err error
+	var file []byte
+	if file, err = ioutil.ReadFile("./song.pcm"); err != nil {
+		t.Error(err)
+	}
+
+	out, _ := PcmToMp3(file, 1, 16000, 9)
+	ioutil.WriteFile("out.mp3", out, 0644)
+
+}

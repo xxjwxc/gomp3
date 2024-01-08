@@ -61,5 +61,15 @@ func main() {
 	if err = player.Close(); err != nil {
 		log.Fatal(err)
 	}
+
+	// pcm to mp3
+	var err error
+	var file []byte
+	if file, err = ioutil.ReadFile("./song.pcm"); err != nil {
+		t.Error(err)
+	}
+
+	out, _ := PcmToMp3(file, 1, 16000, 9)
+	ioutil.WriteFile("out.mp3", out, 0644)
 }
 ```
