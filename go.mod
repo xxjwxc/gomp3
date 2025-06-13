@@ -3,6 +3,7 @@ module github.com/xxjwxc/gomp3
 go 1.20
 
 require (
+	github.com/faiface/beep v1.1.0
 	github.com/hajimehoshi/oto v1.0.1
 	github.com/xxjwxc/public v0.0.0-20230522110634-c12fa2a731cf
 )
@@ -10,6 +11,7 @@ require (
 require (
 	github.com/golang/protobuf v1.5.2 // indirect
 	github.com/gookit/color v1.2.5 // indirect
+	github.com/hajimehoshi/go-mp3 v0.3.0 // indirect
 	github.com/pkg/errors v0.9.1 // indirect
 	go.uber.org/atomic v1.7.0 // indirect
 	go.uber.org/multierr v1.1.0 // indirect

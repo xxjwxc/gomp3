@@ -21,8 +21,14 @@ int decode(mp3dec_t *dec, mp3dec_frame_info_t *info, unsigned char *data, int *l
 */
 import "C"
 import (
+	"bytes"
+	"fmt"
+	"io"
 	"unsafe"
 
+	"github.com/faiface/beep"
+	"github.com/faiface/beep/mp3"
+	"github.com/faiface/beep/wav"
 	"github.com/xxjwxc/public/message"
 )
 
@@ -209,6 +215,33 @@ func PcmToWav(byteDst []byte, numchannel int, saplerate int) (resDst string) {
 	return
 }
 
+func ConvertMP3ToWAV(mp3Data []byte, targetSampleRate beep.SampleRate) ([]byte, error) {
+	// 将 MP3 数据加载到内存中
+	mp3Reader := bytes.NewReader(mp3Data)
+	readCloser := NewReadCloser(mp3Reader)
+	// 解码 MP3 数据
+	streamer, format, err := mp3.Decode(readCloser)
+	if err != nil {
+		return nil, err
+	}
+	defer streamer.Close()
+
+	streamer1 := beep.Resample(4, format.SampleRate, targetSampleRate, streamer)
+	format.SampleRate = targetSampleRate
+	buffer := &bytes.Buffer{}
+
+	// 创建一个缓冲区来存储 WAV 数据
+	ws := NewWriteSeeker(buffer)
+
+	// 将音频数据写入 WAV 缓冲区
+	err = wav.Encode(ws, streamer1, format)
+	if err != nil {
+		return nil, err
+	}
+
+	return ReadWriteSeeker(ws)
+}
+
 /*
 *
 dst:二进制字符串
@@ -236,3 +269,65 @@ outQuality: 压缩质量：0: highest; 9: lowest
 
 // 	return buf.Bytes(), nil
 // }
+
+type readCloserWrapper struct {
+	reader *bytes.Reader
+}
+
+func (rc *readCloserWrapper) Read(p []byte) (int, error) {
+	return rc.reader.Read(p)
+}
+
+func (rc *readCloserWrapper) Close() error {
+	// `bytes.Reader` 不需要真正的关闭操作，所以这里返回 nil
+	return nil
+}
+
+func NewReadCloser(reader *bytes.Reader) io.ReadCloser {
+	return &readCloserWrapper{reader: reader}
+}
+
+type writeSeekerWrapper struct {
+	buffer *bytes.Buffer
+	offset int64
+}
+
+func (ws *writeSeekerWrapper) Write(p []byte) (int, error) {
+	// 写入数据到缓冲区
+	n, err := ws.buffer.Write(p)
+	ws.offset += int64(n)
+	return n, err
+}
+
+func (ws *writeSeekerWrapper) Seek(offset int64, whence int) (int64, error) {
+	// 根据 whence 设置偏移量
+	switch whence {
+	case io.SeekStart:
+		ws.offset = offset
+	case io.SeekCurrent:
+		ws.offset += offset
+	case io.SeekEnd:
+		ws.offset = int64(ws.buffer.Len()) + offset
+	default:
+		return 0, fmt.Errorf("无效的 whence 值: %d", whence)
+	}
+
+	// 检查偏移量是否有效
+	if ws.offset < 0 || ws.offset > int64(ws.buffer.Len()) {
+		return 0, fmt.Errorf("偏移量超出范围")
+	}
+
+	return ws.offset, nil
+}
+
+func NewWriteSeeker(buffer *bytes.Buffer) io.WriteSeeker {
+	return &writeSeekerWrapper{buffer: buffer, offset: 0}
+}
+
+func ReadWriteSeeker(ws io.WriteSeeker) ([]byte, error) {
+	// 检查具体实现是否支持读取
+	if wrapper, ok := ws.(*writeSeekerWrapper); ok {
+		return wrapper.buffer.Bytes(), nil
+	}
+	return nil, fmt.Errorf("无法读取 io.WriteSeeker 的值")
+}
