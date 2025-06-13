@@ -229,7 +229,7 @@ func ConvertMP3ToWAV(mp3Data []byte, targetSampleRate beep.SampleRate) ([]byte, 
 	streamer1 := beep.Resample(4, format.SampleRate, targetSampleRate, streamer)
 	format.SampleRate = targetSampleRate
 	format.NumChannels = 1
-	format.Precision = 1
+	format.Precision = 2
 	buffer := &bytes.Buffer{}
 
 	// 创建一个缓冲区来存储 WAV 数据
