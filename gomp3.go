@@ -295,10 +295,23 @@ type writeSeekerWrapper struct {
 }
 
 func (ws *writeSeekerWrapper) Write(p []byte) (int, error) {
+	// 当ws.buffer >0 并且ws.offset < ws.buffer.Len()
+	if ws.buffer.Len() > 0 && ws.offset < int64(ws.buffer.Len()) {
+		buf := ws.buffer.Bytes()
+		end := ws.offset + int64(len(p))
+		copy(buf[ws.offset:end], p) // 直接覆盖缓冲区内容
+		// // 检查缓冲区内容
+		// fmt.Printf("重置: %d, 当前偏移量: %d\n", len(p), ws.offset)
+		return len(p), nil
+	}
+
 	// 写入数据到缓冲区
 	n, err := ws.buffer.Write(p)
 	ws.offset += int64(n)
+	// 检查缓冲区内容
+	// fmt.Printf("写入数据长度: %d, 当前偏移量: %d\n", n, ws.offset)
 	return n, err
+
 }
 
 func (ws *writeSeekerWrapper) Seek(offset int64, whence int) (int64, error) {
